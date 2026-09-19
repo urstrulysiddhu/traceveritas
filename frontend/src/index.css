@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.react-flow__node {
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 0.75rem;
+}
