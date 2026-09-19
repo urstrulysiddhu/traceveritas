@@ -27,6 +27,11 @@
 
   --animate-pulse-slow: pulse-slow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-pan-slow: pan-slow 40s linear infinite;
+  
+  --animate-flow-slow: flow 45s ease-in-out infinite alternate;
+  --animate-flow-medium: flow 30s ease-in-out infinite alternate;
+  --animate-flow-slow-reverse: flow-reverse 40s ease-in-out infinite alternate;
+  --animate-pulse-very-slow: pulse-slow 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   @keyframes pulse-slow {
     0%, 100% { opacity: 1; }
@@ -36,6 +41,16 @@
   @keyframes pan-slow {
     0% { transform: translate(0, 0); }
     100% { transform: translate(-400px, -400px); }
+  }
+  
+  @keyframes flow {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-3vw, 2vh) scale(1.05); }
+  }
+
+  @keyframes flow-reverse {
+    0% { transform: translate(0, 0) scale(1.05); }
+    100% { transform: translate(2vw, -3vh) scale(1); }
   }
 }
 
