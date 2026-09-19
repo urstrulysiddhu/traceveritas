@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     neo4j_username: str
     neo4j_password: str
     neo4j_database: str = "neo4j"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
     
     model_config = SettingsConfigDict(env_file="backend/.env", env_file_encoding="utf-8", extra="ignore")
 

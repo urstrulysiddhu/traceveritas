@@ -11,10 +11,10 @@ export const ViewCypher: React.FC<Props> = ({ result }) => {
   if (!result) return null;
 
   return (
-    <section className="mt-8">
+    <section className="mt-8 border-t border-ui-border pt-4">
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-2 border-b border-slate-200 pb-2 cursor-pointer hover:text-slate-900 transition-colors"
+        className="text-[10px] font-bold text-muted tracking-widest uppercase mb-2 cursor-pointer hover:text-ink transition-colors"
       >
         VIEW CYPHER {isOpen ? '▼' : '▶'}
       </div>
@@ -22,14 +22,14 @@ export const ViewCypher: React.FC<Props> = ({ result }) => {
       {isOpen && (
         <div className="mt-4 space-y-4">
           <div>
-            <div className="text-[10px] text-slate-500 uppercase mb-1">Parameterized Query</div>
-            <pre className="text-[10px] font-mono text-slate-800 bg-slate-50 p-4 border border-slate-200 overflow-x-auto whitespace-pre-wrap">
+            <div className="text-[10px] text-muted font-bold tracking-widest uppercase mb-2">Parameterized Query</div>
+            <pre className="text-[10px] font-mono text-ink bg-surface p-4 border border-ui-border overflow-x-auto whitespace-pre-wrap">
               {result.cypher}
             </pre>
           </div>
           <div>
-            <div className="text-[10px] text-slate-500 uppercase mb-1">Parameters</div>
-            <pre className="text-[10px] font-mono text-slate-800 bg-slate-50 p-4 border border-slate-200 overflow-x-auto">
+            <div className="text-[10px] text-muted font-bold tracking-widest uppercase mb-2">Parameters</div>
+            <pre className="text-[10px] font-mono text-ink bg-surface p-4 border border-ui-border overflow-x-auto">
               {JSON.stringify(result.parameters, null, 2)}
             </pre>
           </div>

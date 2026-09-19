@@ -2,59 +2,62 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 
 interface Props {
-  onInvestigate: (batchId: string) => Promise<void>;
+  onInvestigate: (entityType: string, entityId: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
-  defaultBatchId?: string;
 }
 
-export const InvestigationConsole: React.FC<Props> = ({ onInvestigate, isLoading, error, defaultBatchId = 'B002' }) => {
-  const [batchId, setBatchId] = useState(defaultBatchId);
+export const InvestigationConsole: React.FC<Props> = ({ onInvestigate, isLoading, error }) => {
+  const [entityType, setEntityType] = useState('Batch');
+  const [entityId, setEntityId] = useState('B002');
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (batchId.trim()) {
-      onInvestigate(batchId.trim());
+    if (entityId.trim()) {
+      onInvestigate(entityType, entityId.trim());
     }
   };
 
   return (
-    <section className="text-center py-8">
-      <h2 className="text-2xl font-bold text-slate-900 tracking-wide mb-2 uppercase">Contamination Investigation</h2>
-      <p className="text-sm text-slate-500 mb-8 max-w-lg mx-auto">
-        Trace downstream operational impact from a supplier or batch through the connected supply chain.
-      </p>
+    <section className="relative bg-surface border border-ui-border p-4 md:px-6 md:py-4 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+      <div className="shrink-0">
+        <h2 className="text-[10px] font-bold text-muted tracking-widest uppercase">Investigation Console</h2>
+        <p className="text-sm font-bold text-ink tracking-widest uppercase mt-1">Trace An Incident</p>
+      </div>
       
-      <form onSubmit={handleSubmit} className="flex items-end justify-center gap-4 max-w-xl mx-auto">
-        <div className="text-left w-1/3">
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Entity Type</label>
-          <select className="bg-white border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 rounded-none w-full">
-            <option value="batch">Batch</option>
-            <option value="supplier" disabled>Supplier</option>
+      <form onSubmit={handleSubmit} className="flex flex-1 items-end md:items-center justify-end gap-4 max-w-2xl">
+        <div className="w-1/3">
+          <select 
+            value={entityType}
+            onChange={(e) => setEntityType(e.target.value)}
+            className="bg-canvas border border-ui-border px-3 py-2.5 text-xs text-ink focus:outline-none focus:border-maroon rounded-none w-full font-mono uppercase transition-colors"
+          >
+            <option value="Batch">Batch</option>
+            <option value="Order">Order</option>
+            <option value="Customer">Customer</option>
           </select>
         </div>
-        <div className="text-left w-1/3">
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Entity ID</label>
+        <div className="w-1/3">
           <input 
             type="text" 
-            value={batchId}
-            onChange={(e) => setBatchId(e.target.value)}
-            className="bg-white border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 rounded-none w-full"
-            placeholder="e.g. B002"
+            value={entityId}
+            onChange={(e) => setEntityId(e.target.value)}
+            className="bg-canvas border border-ui-border px-3 py-2.5 text-xs text-ink focus:outline-none focus:border-maroon rounded-none w-full font-mono uppercase transition-colors"
+            placeholder={entityType === 'Order' ? 'e.g. O07' : entityType === 'Customer' ? 'e.g. C01' : 'e.g. B002'}
           />
         </div>
         <div className="w-1/3">
           <button 
             type="submit" 
-            disabled={isLoading || !batchId.trim()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 font-bold tracking-wide uppercase text-xs transition-colors rounded-none w-full"
+            disabled={isLoading || !entityId.trim()}
+            className="bg-maroon hover:bg-burgundy disabled:opacity-50 text-white px-4 py-2.5 font-bold tracking-widest uppercase text-[10px] transition-colors rounded-none w-full whitespace-nowrap"
           >
-            {isLoading ? 'Running...' : 'Run Investigation'}
+            {isLoading ? 'RUNNING...' : 'INVESTIGATE →'}
           </button>
         </div>
       </form>
       {error && (
-        <div className="mt-4 text-xs text-red-600 font-medium">
+        <div className="absolute -bottom-6 right-0 text-[10px] text-critical font-mono font-bold tracking-widest uppercase">
           {error}
         </div>
       )}

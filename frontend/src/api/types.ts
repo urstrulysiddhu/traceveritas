@@ -70,3 +70,69 @@ export interface RecallResponse {
   cypher: string;
   parameters: Record<string, any>;
 }
+
+export interface TraceOriginRequest {
+  entity_type: string;
+  entity_id: string;
+}
+
+export interface SupplierSummary {
+  id: string;
+  name: string;
+  location: string;
+}
+
+export interface TracePathNode {
+  label: string;
+  id: string;
+  name?: string;
+}
+
+export interface TraceOriginResponse {
+  success: boolean;
+  source_entity_type: string;
+  source_entity_id: string;
+  path: TracePathNode[];
+  supplier?: SupplierSummary;
+  batch?: BatchSummary;
+  kitchen?: AffectedKitchen;
+  dish?: AffectedDish;
+  order?: AffectedOrder;
+  customer?: AffectedCustomer;
+  cypher: string;
+  parameters: Record<string, any>;
+}
+
+export interface SimulateContainmentRequest {
+  batch_id: string;
+  kitchen_id: string;
+}
+
+export interface SimulationScope {
+  kitchens: AffectedKitchen[];
+  dishes: AffectedDish[];
+  orders: AffectedOrder[];
+  customers: AffectedCustomer[];
+  counts: ImpactSummary;
+}
+
+export interface SimulateContainmentResponse {
+  success: boolean;
+  batch_id: string;
+  containment_kitchen_id: string;
+  remaining: SimulationScope;
+  contained: SimulationScope;
+  cypher: string;
+  parameters: Record<string, any>;
+}
+
+export interface TraceAssistRequest {
+  question: string;
+  entity_type: string;
+  entity_id: string;
+  containment_kitchen_id?: string;
+}
+
+export interface TraceAssistResponse {
+  answer: string;
+}

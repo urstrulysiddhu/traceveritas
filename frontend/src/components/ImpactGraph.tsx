@@ -2,13 +2,14 @@ import { useMemo } from 'react';
 import ReactFlow, { Background, Controls } from 'reactflow';
 import type { Edge, Node } from 'reactflow';
 import 'reactflow/dist/style.css';
-import type { InvestigationResponse } from '../api/types';
+import type { InvestigationResponse, SimulateContainmentResponse } from '../api/types';
 
 interface Props {
   result: InvestigationResponse | null;
+  simResult?: SimulateContainmentResponse | null;
 }
 
-export const ImpactGraph: React.FC<Props> = ({ result }) => {
+export const ImpactGraph: React.FC<Props> = ({ result, simResult }) => {
   const { nodes, edges } = useMemo(() => {
     if (!result || !result.batch) return { nodes: [], edges: [] };
 
@@ -16,70 +17,103 @@ export const ImpactGraph: React.FC<Props> = ({ result }) => {
     const newEdges: Edge[] = [];
     
     const baseNodeStyle = {
-      background: '#ffffff',
-      color: '#0f172a',
-      width: 120,
-      padding: '8px 4px',
-      fontSize: '10px',
+      color: '#FFFFFF',
+      width: 140,
+      padding: '12px 8px',
+      fontSize: '11px',
+      fontFamily: 'var(--font-mono)',
       textAlign: 'center' as const,
-      border: '1px solid #cbd5e1'
+      border: 'none',
+      borderRadius: '0',
+      transition: 'all 0.3s',
+      fontWeight: 'bold',
+      letterSpacing: '0.05em'
+    };
+    
+    const containedStyle = {
+      opacity: 0.25,
+      filter: 'grayscale(100%)'
     };
 
-    // Batch (Solid dark border)
+    const isContained = (type: string, id: string) => {
+      if (!simResult) return false;
+      if (type === 'k' && simResult.contained.kitchens.find(x => x.id === id)) return true;
+      if (type === 'd' && simResult.contained.dishes.find(x => x.id === id)) return true;
+      if (type === 'o' && simResult.contained.orders.find(x => x.id === id)) return true;
+      if (type === 'c' && simResult.contained.customers.find(x => x.id === id)) return true;
+      return false;
+    };
+
+    const edgeStyle = (contained: boolean) => ({
+      stroke: contained ? '#D9DADD' : '#52545A',
+      strokeWidth: 2,
+      opacity: contained ? 0.3 : 1
+    });
+
+    const edgeLabelStyle = { fill: '#52545A', fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-sans)' };
+    const edgeBgStyle = { fill: '#F7F7F5', fillOpacity: 0.9 };
+
+    // Batch: #3B1118 (burgundy)
     newNodes.push({
       id: `b-${result.batch.id}`,
       data: { label: `BATCH\n${result.batch.id}` },
       position: { x: 50, y: 150 },
-      style: { ...baseNodeStyle, border: '2px solid #0f172a', fontWeight: 'bold' }
+      style: { ...baseNodeStyle, background: '#3B1118' }
     });
 
-    // Kitchens (Dashed border)
+    // Kitchens: #315C7D (info blue)
     result.kitchens.forEach((k, i) => {
+      const contained = isContained('k', k.id);
       newNodes.push({
         id: `k-${k.id}`,
         data: { label: `KITCHEN\n${k.id}` },
-        position: { x: 260, y: 50 + i * 100 },
-        style: { ...baseNodeStyle, border: '1px dashed #64748b' }
+        position: { x: 300, y: 50 + i * 120 },
+        style: { ...baseNodeStyle, background: '#315C7D', ...(contained ? containedStyle : {}) }
       });
       newEdges.push({
         id: `e-b-${result.batch!.id}-k-${k.id}`,
         source: `b-${result.batch!.id}`,
         target: `k-${k.id}`,
         label: 'DELIVERED TO',
-        labelStyle: { fill: '#64748b', fontSize: 8, fontWeight: 700 },
-        labelBgStyle: { fill: '#f8fafc', fillOpacity: 0.8 },
-        style: { stroke: '#94a3b8' }
+        labelStyle: edgeLabelStyle,
+        labelBgStyle: edgeBgStyle,
+        style: edgeStyle(contained)
       });
     });
 
-    // Dishes (Dotted border)
+    // Dishes: #66717C
     result.dishes.forEach((d, i) => {
+      const contained = isContained('d', d.id);
       newNodes.push({
         id: `d-${d.id}`,
         data: { label: `DISH\n${d.id}` },
-        position: { x: 470, y: 50 + i * 80 },
-        style: { ...baseNodeStyle, border: '1px dotted #94a3b8' }
+        position: { x: 550, y: 50 + i * 90 },
+        style: { ...baseNodeStyle, background: '#66717C', ...(contained ? containedStyle : {}) }
       });
       result.kitchens.forEach(k => {
+        const kContained = isContained('k', k.id);
+        const edgeContained = kContained || contained;
+        
         newEdges.push({
           id: `e-k-${k.id}-d-${d.id}`,
           source: `k-${k.id}`,
           target: `d-${d.id}`,
           label: 'USED IN',
-          labelStyle: { fill: '#94a3b8', fontSize: 8, fontWeight: 700 },
-          labelBgStyle: { fill: '#f8fafc', fillOpacity: 0.8 },
-          style: { stroke: '#cbd5e1' }
+          labelStyle: edgeLabelStyle,
+          labelBgStyle: edgeBgStyle,
+          style: edgeStyle(edgeContained)
         });
       });
     });
 
-    // Orders (Solid light border)
+    // Orders: #8B939A
     result.orders.forEach((o, i) => {
+      const contained = isContained('o', o.id);
       newNodes.push({
         id: `o-${o.id}`,
         data: { label: `ORDER\n${o.id}` },
-        position: { x: 680, y: 50 + i * 60 },
-        style: { ...baseNodeStyle }
+        position: { x: 800, y: 50 + i * 70 },
+        style: { ...baseNodeStyle, background: '#8B939A', ...(contained ? containedStyle : {}) }
       });
       result.dishes.forEach(d => {
         newEdges.push({
@@ -87,20 +121,21 @@ export const ImpactGraph: React.FC<Props> = ({ result }) => {
           source: `d-${d.id}`,
           target: `o-${o.id}`,
           label: 'ORDERED AS',
-          labelStyle: { fill: '#cbd5e1', fontSize: 8, fontWeight: 700 },
-          labelBgStyle: { fill: '#f8fafc', fillOpacity: 0.8 },
-          style: { stroke: '#e2e8f0' }
+          labelStyle: edgeLabelStyle,
+          labelBgStyle: edgeBgStyle,
+          style: edgeStyle(contained)
         });
       });
     });
 
-    // Customers (Solid light border)
+    // Customers: #AEB4B9
     result.customers.forEach((c, i) => {
+      const contained = isContained('c', c.id);
       newNodes.push({
         id: `c-${c.id}`,
         data: { label: `CUSTOMER\n${c.id}` },
-        position: { x: 890, y: 50 + i * 60 },
-        style: { ...baseNodeStyle, background: '#f1f5f9' }
+        position: { x: 1050, y: 50 + i * 70 },
+        style: { ...baseNodeStyle, background: '#AEB4B9', color: '#171719', ...(contained ? containedStyle : {}) }
       });
       result.orders.forEach(o => {
         newEdges.push({
@@ -108,27 +143,37 @@ export const ImpactGraph: React.FC<Props> = ({ result }) => {
           source: `o-${o.id}`,
           target: `c-${c.id}`,
           label: 'PLACED BY',
-          labelStyle: { fill: '#cbd5e1', fontSize: 8, fontWeight: 700 },
-          labelBgStyle: { fill: '#f8fafc', fillOpacity: 0.8 },
-          style: { stroke: '#e2e8f0' }
+          labelStyle: edgeLabelStyle,
+          labelBgStyle: edgeBgStyle,
+          style: edgeStyle(contained)
         });
       });
     });
 
     return { nodes: newNodes, edges: newEdges };
-  }, [result]);
+  }, [result, simResult]);
 
   if (!result) return null;
 
   return (
-    <section className="mt-12">
-      <h2 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-200 pb-2">Traceability Diagram</h2>
-      <div className="h-[500px] w-full border border-slate-200 bg-slate-50">
-        <ReactFlow nodes={nodes} edges={edges} fitView minZoom={0.2}>
-          <Background color="#cbd5e1" gap={16} />
-          <Controls className="bg-white fill-slate-700 border-slate-200" />
-        </ReactFlow>
+    <div className="h-full w-full relative">
+      <div className="absolute top-4 left-4 z-10">
+        <h2 className="text-[10px] font-bold text-ink tracking-widest uppercase bg-surface px-3 py-1.5 border border-ui-border shadow-sm">
+          Traceability Graph
+        </h2>
       </div>
-    </section>
+      {simResult && (
+        <div className="absolute top-4 right-4 z-10">
+          <div className="flex gap-4 text-[10px] font-bold tracking-widest uppercase bg-surface px-3 py-1.5 border border-ui-border shadow-sm">
+            <span className="text-simulation">● Affected by simulation</span>
+            <span className="text-muted">○ Contained (Out of scope)</span>
+          </div>
+        </div>
+      )}
+      <ReactFlow nodes={nodes} edges={edges} fitView fitViewOptions={{ padding: 0.1, duration: 800 }} minZoom={0.2} maxZoom={2}>
+        <Background color="#D9DADD" gap={20} />
+        <Controls className="bg-surface fill-ink border-ui-border shadow-none" />
+      </ReactFlow>
+    </div>
   );
 };

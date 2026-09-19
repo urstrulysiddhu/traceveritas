@@ -63,3 +63,66 @@ class RecallResponse(BaseModel):
     batch: BatchSummary
     cypher: str
     parameters: dict
+
+class TraceOriginRequest(BaseModel):
+    entity_type: str
+    entity_id: str
+
+class SupplierSummary(BaseModel):
+    id: str
+    name: str
+    location: str
+
+class TracePathNode(BaseModel):
+    label: str
+    id: str
+    name: Optional[str] = None
+
+class TraceOriginResponse(BaseModel):
+    success: bool
+    source_entity_type: str
+    source_entity_id: str
+    path: List[TracePathNode]
+    supplier: Optional[SupplierSummary] = None
+    batch: Optional[BatchSummary] = None
+    kitchen: Optional[AffectedKitchen] = None
+    dish: Optional[AffectedDish] = None
+    order: Optional[AffectedOrder] = None
+    customer: Optional[AffectedCustomer] = None
+    cypher: str
+    parameters: dict
+
+class SimulateContainmentRequest(BaseModel):
+    batch_id: str
+    kitchen_id: str
+
+class SimulationScope(BaseModel):
+    kitchens: List[AffectedKitchen]
+    dishes: List[AffectedDish]
+    orders: List[AffectedOrder]
+    customers: List[AffectedCustomer]
+    counts: ImpactSummary
+
+class TraceAssistRequest(BaseModel):
+    question: str
+    entity_type: str
+    entity_id: str
+    containment_kitchen_id: Optional[str] = None
+
+class SimulateContainmentResponse(BaseModel):
+    success: bool
+    batch_id: str
+    containment_kitchen_id: str
+    remaining: SimulationScope
+    contained: SimulationScope
+    cypher: str
+    parameters: dict
+
+class TraceAssistRequest(BaseModel):
+    question: str
+    entity_type: str
+    entity_id: str
+    containment_kitchen_id: Optional[str] = None
+
+class TraceAssistResponse(BaseModel):
+    answer: str
