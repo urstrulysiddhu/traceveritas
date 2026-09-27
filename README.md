@@ -4,6 +4,8 @@
 
 > **TraceVeritas turns food-safety incident response into a connected workflow: investigate, trace, simulate, recall, and verify.**
 
+![TraceVeritas Investigation Console](assets/screenshots/investigation-console.png)
+
 When a contaminated ingredient batch enters a food supply chain, the difficult question is not simply *which database records contain that batch?*
 
 Operators need to know:
@@ -24,7 +26,7 @@ Investigate → Trace → Analyze → Simulate → Recall → Verify
 
 ---
 
-## The Problem
+# The Problem
 
 Cloud-kitchen supply chains are highly connected:
 
@@ -129,7 +131,7 @@ Order → Dish → Kitchen → Batch → Supplier
 
 ---
 
-# 4. Counterfactual Containment Simulation
+## 4. Counterfactual Containment Simulation
 
 Before changing the live system, an operator can simulate containment at a selected kitchen.
 
@@ -170,7 +172,7 @@ This gives operators a way to evaluate the effect of a containment decision befo
 
 ---
 
-# 5. Targeted Recall
+## 5. Targeted Recall
 
 Once a recall decision is made, TraceVeritas can perform a real Neo4j mutation.
 
@@ -190,7 +192,7 @@ It re-queries Neo4j and verifies the updated state.
 
 ---
 
-# 6. Live Recall Verification
+## 6. Live Recall Verification
 
 The recall workflow is:
 
@@ -206,11 +208,11 @@ READY TO EXECUTE RECALL
 
 The UI only displays the final verified state after confirming it against the live Neo4j database.
 
-This was designed to prevent the interface from presenting a successful recall state based only on an optimistic frontend response.
+This prevents the interface from presenting a successful recall state based only on an optimistic frontend response.
 
 ---
 
-# 7. Trace Assist
+## 7. Trace Assist
 
 TraceVeritas also includes **Trace Assist**, a graph-grounded operational assistant powered by Google Gemini.
 
@@ -247,6 +249,40 @@ Trace Assist can work with:
 * Current recall status
 
 It also supports browser-native speech recognition and speech synthesis where available.
+
+---
+
+# Screenshots
+
+## Incident Investigation
+
+The investigation console combines the live Neo4j traceability graph with Trace Assist in a single operational workspace.
+
+![TraceVeritas Investigation Console](assets/screenshots/investigation-console.png)
+
+---
+
+## Reverse Trace
+
+Trace an affected customer or order upstream through the supply chain to identify the originating batch and supplier.
+
+![TraceVeritas Reverse Trace](assets/screenshots/reverse-trace.png)
+
+---
+
+## Trace Assist
+
+Ask questions about the current investigation and receive answers grounded in live Neo4j context.
+
+![TraceVeritas Trace Assist](assets/screenshots/trace-assist.png)
+
+---
+
+## Recall Verification
+
+After executing a recall, TraceVeritas re-queries the live graph and verifies the resulting state instead of relying solely on the frontend response.
+
+![TraceVeritas Recall Verification](assets/screenshots/recall-verification.png)
 
 ---
 
@@ -342,7 +378,7 @@ The graph therefore acts as the **operational model of the incident**, rather th
 
 # Demo Workflow
 
-The intended demonstration follows a complete incident-response cycle:
+The intended demonstration follows a complete incident-response cycle.
 
 ### 1. Investigate
 
@@ -484,7 +520,7 @@ The result is a functional prototype that connects graph traversal, operational 
 
 ---
 
-## Status
+# Status
 
 **Functional graph-powered food-safety intelligence prototype.**
 
