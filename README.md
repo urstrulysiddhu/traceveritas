@@ -2,35 +2,31 @@
 
 ### Graph-Powered Food Safety Intelligence & Recall Command Center
 
-> **TraceVeritas transforms food-safety incident response from database lookup into graph-powered investigation, impact analysis, containment simulation, targeted recall, and live verification.**
+> **TraceVeritas turns food-safety incident response into a connected workflow: investigate, trace, simulate, recall, and verify.**
 
----
+When a contaminated ingredient batch enters a food supply chain, the difficult question is not simply *which database records contain that batch?*
 
-## 1. Overview
+Operators need to know:
 
-Cloud kitchens operate through interconnected supply chains involving suppliers, ingredient batches, kitchens, dishes, orders, and customers.
-
-When an ingredient batch becomes contaminated, a conventional relational lookup can make it difficult to answer the most important operational questions quickly:
-
-* Which kitchens received the batch?
+* Which kitchens received it?
 * Which dishes used it?
 * Which orders are affected?
 * Which customers may have been exposed?
-* Where did the affected order originate?
-* What happens if containment is applied at one kitchen?
-* Has the recall actually changed the live system state?
+* Where did an affected order originate?
+* What would happen if a kitchen were contained?
+* Did the recall actually change the live system?
 
-**TraceVeritas** uses **Neo4j graph traversal** to model these relationships as a connected supply-chain graph.
+TraceVeritas uses **Neo4j graph traversal** to model these relationships and provide a unified incident-response workflow.
 
-It provides a unified operational workflow:
-
-> **Investigate → Trace → Analyze → Simulate → Decide → Recall → Verify**
+```text
+Investigate → Trace → Analyze → Simulate → Recall → Verify
+```
 
 ---
 
-## 2. Core Problem
+## The Problem
 
-The system models the supply chain as:
+Cloud-kitchen supply chains are highly connected:
 
 ```text
 Supplier
@@ -46,7 +42,9 @@ Order
 Customer
 ```
 
-Using graph relationships:
+A contaminated batch can therefore create a chain of downstream impact.
+
+TraceVeritas models these relationships directly in Neo4j:
 
 ```text
 (Supplier)-[:SUPPLIES]->(Batch)
@@ -56,65 +54,48 @@ Using graph relationships:
 (Order)-[:PLACED_BY]->(Customer)
 ```
 
-This allows TraceVeritas to traverse the entire downstream impact of a contaminated batch and also perform reverse root-cause tracing.
+This allows the system to traverse the graph in both directions rather than treating each entity as an isolated database record.
 
 ---
 
-# 3. Key Capabilities
+# What TraceVeritas Does
 
-## 3.1 Live Incident Investigation
+## 1. Live Incident Investigation
 
-Select an entity and investigate its connected supply-chain impact.
+An operator can select an affected batch and investigate its current downstream impact.
 
-Example:
+For example:
 
 ```text
 Batch: B002
-```
 
-TraceVeritas queries the live Neo4j database and dynamically calculates:
-
-```text
 2 Kitchens
 5 Dishes
 7 Orders
 7 Customers
 ```
 
-No impact numbers are hardcoded into the frontend.
+These values are calculated from the **live Neo4j graph** rather than hardcoded into the frontend.
 
 ---
 
-## 3.2 Graph-Based Blast Radius
+## 2. Graph-Based Blast Radius
 
-The central React Flow visualization exposes the causal chain:
+The investigation console visualizes the connected impact using **React Flow**.
 
 ```text
 Supplier → Batch → Kitchen → Dish → Order → Customer
 ```
 
-The graph is dynamically generated from Neo4j query results.
-
-Different entity types receive distinct visual semantics:
-
-| Entity   | Visual Role                    |
-| -------- | ------------------------------ |
-| Supplier | Source                         |
-| Batch    | Incident / contamination point |
-| Kitchen  | Operational node               |
-| Dish     | Product                        |
-| Order    | Transaction                    |
-| Customer | Exposure endpoint              |
-
-This makes the graph a visual representation of the incident's blast radius.
+The graph is generated from Neo4j query results, allowing the visualization to reflect the actual investigation rather than a static diagram.
 
 ---
 
-## 3.3 Reverse Trace / Root-Cause Analysis
+## 3. Reverse Trace
 
-TraceVeritas can investigate an individual Order or Customer backwards through the graph.
+The same graph can be traversed upstream.
 
-Example:
+For an affected order:
 
 ```text
 O07
@@ -128,15 +109,15 @@ B002
 S001
 ```
 
-This answers questions such as:
+This allows an operator to answer:
 
-> Why is order O07 affected?
+> **Why is this order affected?**
 
 and:
 
-> Which supplier and batch are upstream of this order?
+> **Which batch and supplier are upstream of it?**
 
-This demonstrates the bidirectional value of the graph:
+The system therefore supports both:
 
 ```text
 DOWNSTREAM
@@ -150,7 +131,7 @@ Order → Dish → Kitchen → Batch → Supplier
 
 # 4. Counterfactual Containment Simulation
 
-TraceVeritas allows operators to simulate containment at a selected kitchen without modifying the database.
+Before changing the live system, an operator can simulate containment at a selected kitchen.
 
 Example:
 
@@ -159,83 +140,83 @@ Batch: B002
 Containment: K01
 ```
 
-The system compares:
+TraceVeritas compares:
 
 ```text
 LIVE IMPACT
-vs.
+      vs.
 SIMULATED REMAINING IMPACT
 ```
 
-For the seeded B002 scenario:
+For the demonstration scenario:
 
 ```text
 LIVE
-
 2 Kitchens
 5 Dishes
 7 Orders
 7 Customers
-```
 
-After simulated containment at K01:
-
-```text
-SIMULATED REMAINING
-
+SIMULATED AFTER K01 CONTAINMENT
 1 Kitchen
 2 Dishes
 3 Orders
 3 Customers
 ```
 
-The simulation is explicitly **read-only**.
+The simulation is **read-only**. No Neo4j mutation occurs during this step.
 
-No Neo4j mutation occurs during simulation.
+This gives operators a way to evaluate the effect of a containment decision before executing it.
 
 ---
 
 # 5. Targeted Recall
 
-Once an operator decides to recall a contaminated batch, TraceVeritas executes a real Neo4j mutation.
+Once a recall decision is made, TraceVeritas can perform a real Neo4j mutation.
 
-The batch status changes to:
+For example:
 
 ```text
+B002
+   ↓
 CONTAMINATED
 ```
 
-The application then performs a fresh investigation against Neo4j rather than assuming the mutation succeeded.
+The important part is what happens next.
+
+The application does **not** simply assume the mutation succeeded.
+
+It re-queries Neo4j and verifies the updated state.
 
 ---
 
 # 6. Live Recall Verification
 
-TraceVeritas follows:
+The recall workflow is:
 
 ```text
 READY TO EXECUTE RECALL
-        ↓
-EXECUTING RECALL
-        ↓
-VERIFYING LIVE GRAPH
-        ↓
-✓ RECALL VERIFIED
+          ↓
+     EXECUTING RECALL
+          ↓
+   VERIFYING LIVE GRAPH
+          ↓
+      ✓ RECALL VERIFIED
 ```
 
-The final state is only displayed after the application confirms the updated state from the live Neo4j graph.
+The UI only displays the final verified state after confirming it against the live Neo4j database.
 
-This prevents the UI from presenting a false success state.
+This was designed to prevent the interface from presenting a successful recall state based only on an optimistic frontend response.
 
 ---
 
 # 7. Trace Assist
 
-Trace Assist is a graph-grounded operational assistant powered by **Google Gemini**.
+TraceVeritas also includes **Trace Assist**, a graph-grounded operational assistant powered by Google Gemini.
 
-It is not a collection of hardcoded responses.
+The assistant does not answer from a static set of predefined responses.
 
-The architecture is:
+Instead:
 
 ```text
 User Question
@@ -244,49 +225,18 @@ FastAPI
       ↓
 Fresh Neo4j Context
       ↓
-Structured Investigation Context
+Investigation Context
       ↓
 Gemini
       ↓
 Grounded Operational Answer
-      ↓
-Trace Assist UI
 ```
 
-Example:
+For example:
 
-```text
-User:
-Who is affected?
+> **Who is affected?**
 
-Trace Assist:
-[Gemini-generated answer grounded in the current
-Neo4j investigation context]
-
-SOURCE: LIVE NEO4J GRAPH
-```
-
-Trace Assist dynamically receives the current investigation context.
-
-Changing from:
-
-```text
-B002
-```
-
-to:
-
-```text
-B001
-```
-
-changes the graph context supplied to Gemini.
-
-The assistant therefore does not rely on a static answer set.
-
----
-
-## 7.1 Supported Investigation Context
+The backend supplies Gemini with the current investigation context from Neo4j, allowing the response to reflect the selected batch or entity.
 
 Trace Assist can work with:
 
@@ -296,445 +246,117 @@ Trace Assist can work with:
 * Containment simulations
 * Current recall status
 
-The backend re-queries Neo4j when necessary so that recall status is based on the current database state.
+It also supports browser-native speech recognition and speech synthesis where available.
 
 ---
 
-## 7.2 Voice Interaction
-
-Trace Assist supports browser-native:
-
-* Speech Recognition where supported
-* Speech Synthesis / Read Aloud
-
-This allows an operator to ask questions and have analytical responses read aloud.
-
----
-
-# 8. Architecture
+# Architecture
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│                    React Frontend                       │
-│                                                         │
-│ Investigation Console                                  │
-│ Impact Summary                                          │
-│ React Flow Graph                                        │
-│ Reverse Trace                                           │
-│ Containment Simulation                                  │
-│ Recall / Verification                                   │
-│ Trace Assist                                            │
-└─────────────────────────┬───────────────────────────────┘
-                          │
-                          │ REST API
-                          ↓
-┌─────────────────────────────────────────────────────────┐
-│                    FastAPI Backend                      │
-│                                                         │
-│ Investigation Routes                                    │
-│ Reverse Trace Routes                                    │
-│ Simulation Routes                                       │
-│ Recall Routes                                           │
-│ Trace Assist / Gemini Route                             │
-└───────────────┬──────────────────────┬──────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                   React Frontend                     │
+│                                                      │
+│  Investigation Console                              │
+│  Impact Graph                                       │
+│  Reverse Trace                                      │
+│  Containment Simulation                             │
+│  Recall / Verification                              │
+│  Trace Assist                                       │
+└───────────────────────┬──────────────────────────────┘
+                        │
+                      REST
+                        │
+                        ▼
+┌──────────────────────────────────────────────────────┐
+│                   FastAPI Backend                    │
+│                                                      │
+│  Investigation Routes                                │
+│  Reverse Trace                                       │
+│  Simulation                                          │
+│  Recall                                              │
+│  Trace Assist / Gemini                               │
+└───────────────┬──────────────────────┬───────────────┘
                 │                      │
-                │ Cypher               │ Gemini API
-                ↓                      ↓
-┌──────────────────────────┐   ┌────────────────────────┐
-│        Neo4j             │   │     Google Gemini      │
-│                          │   │                        │
-│ Supplier                 │   │ Graph-grounded         │
-│ Batch                    │   │ operational reasoning  │
-│ Kitchen                  │   │                        │
-│ Dish                     │   └────────────────────────┘
-│ Order                    │
-│ Customer                 │
-└──────────────────────────┘
+             Cypher                Gemini API
+                │                      │
+                ▼                      ▼
+       ┌────────────────┐      ┌─────────────────┐
+       │     Neo4j      │      │  Google Gemini  │
+       │                │      │                 │
+       │ Supply Chain   │      │ Graph-grounded  │
+       │ Graph          │      │ assistant       │
+       └────────────────┘      └─────────────────┘
 ```
 
----
-
-# 9. Technology Stack
-
-## Frontend
-
-* React
-* TypeScript
-* Vite
-* Tailwind CSS
-* React Flow
-* Lucide React
-
-## Backend
-
-* Python
-* FastAPI
-* Uvicorn
-* Pydantic
-* Neo4j Python Driver
-* Google GenAI SDK
-
-## Database
-
-* Neo4j
-
-## AI
-
-* Google Gemini
-* Configurable through `GEMINI_MODEL`
+The frontend, API layer, graph database, and AI assistant are kept as separate components.
 
 ---
 
-# 10. Project Structure
+# Why Neo4j?
 
-```text
-traceveritas/
-│
-├── backend/
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── database.py
-│   │   ├── models.py
-│   │   │
-│   │   └── routes/
-│   │       ├── investigation.py
-│   │       └── assistant.py
-│   │
-│   ├── requirements.txt
-│   └── .env.example
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   │   ├── investigation.ts
-│   │   │   ├── assist.ts
-│   │   │   ├── simulation.ts
-│   │   │   └── trace.ts
-│   │   │
-│   │   ├── components/
-│   │   │   ├── Layout.tsx
-│   │   │   ├── InvestigationConsole.tsx
-│   │   │   ├── ImpactGraph.tsx
-│   │   │   ├── ImpactSummary.tsx
-│   │   │   ├── ReverseTracePath.tsx
-│   │   │   ├── RecallSimulator.tsx
-│   │   │   ├── TraceAssist.tsx
-│   │   │   ├── ViewCypher.tsx
-│   │   │   └── BackgroundAnimation.tsx
-│   │   │
-│   │   ├── App.tsx
-│   │   └── index.css
-│   │
-│   └── package.json
-│
-├── cypher/
-│   ├── schema.cypher
-│   └── seed.cypher
-│
-└── README.md
-```
+The central idea behind TraceVeritas is that a contaminated batch is not simply a row in a database.
 
----
-
-# 11. Graph Schema
-
-The Neo4j graph contains six core node types:
+It is a **connected event**.
 
 ```text
 Supplier
+   ↓
 Batch
+   ↓
 Kitchen
+   ↓
 Dish
+   ↓
 Order
+   ↓
 Customer
 ```
 
-And five relationship types:
+Neo4j makes these relationships directly traversable.
 
-```text
-SUPPLIES
-DELIVERED_TO
-USED_IN
-ORDERED_AS
-PLACED_BY
-```
+That enables questions such as:
 
-The database uses uniqueness constraints for stable entity identifiers.
+> **What does this contamination affect?**
 
----
+and:
 
-# 12. Seeded Demo Dataset
+> **Where did this affected order originate?**
 
-The demonstration graph contains:
-
-```text
-3 Suppliers
-6 Batches
-4 Kitchens
-8 Dishes
-12 Orders
-10 Customers
-```
-
-Relationships:
-
-```text
-6 SUPPLIES
-7 DELIVERED_TO
-8 USED_IN
-12 ORDERED_AS
-12 PLACED_BY
-```
-
-### B002 Demonstration Scenario
-
-B002 is connected to:
-
-```text
-2 Kitchens
-5 Dishes
-7 Orders
-7 Customers
-```
-
-This makes B002 the primary demonstration scenario for the incident-response workflow.
+The graph therefore acts as the **operational model of the incident**, rather than simply being a visualization layer.
 
 ---
 
-# 13. API Overview
+# Technology Stack
 
-## Investigation
-
-```http
-POST /api/investigate/batch
-```
-
-Example:
-
-```json
-{
-  "batch_id": "B002"
-}
-```
+| Layer          | Technologies                                  |
+| -------------- | --------------------------------------------- |
+| Frontend       | React, TypeScript, Vite, Tailwind CSS         |
+| Visualization  | React Flow, Lucide React                      |
+| Backend        | Python, FastAPI, Uvicorn, Pydantic            |
+| Graph Database | Neo4j                                         |
+| Graph Queries  | Cypher                                        |
+| AI             | Google Gemini, Google GenAI SDK               |
+| Voice          | Browser Speech Recognition / Speech Synthesis |
 
 ---
 
-## Reverse Trace
+# Demo Workflow
 
-```http
-POST /api/trace/origin
-```
-
-Supports upstream tracing for entities such as:
-
-```text
-Order
-Customer
-```
-
----
-
-## Containment Simulation
-
-```http
-POST /api/simulate/containment
-```
-
-Example:
-
-```json
-{
-  "batch_id": "B002",
-  "kitchen_id": "K01"
-}
-```
-
-Simulation is read-only.
-
----
-
-## Recall
-
-```http
-POST /api/recall/batch
-```
-
-Example:
-
-```json
-{
-  "batch_id": "B002"
-}
-```
-
----
-
-## Trace Assist
-
-```http
-POST /api/assistant/chat
-```
-
-Example:
-
-```json
-{
-  "question": "Who is affected?",
-  "entity_type": "Batch",
-  "entity_id": "B002"
-}
-```
-
----
-
-## Health
-
-```http
-GET /health
-```
-
----
-
-# 14. Local Setup
-
-## Prerequisites
-
-Install:
-
-* Node.js
-* npm
-* Python 3
-* Neo4j
-* Git
-
----
-
-## Backend Setup
-
-From the repository root:
-
-```powershell
-cd C:\Users\hp\traceveritas
-```
-
-Create/activate a Python environment if desired, then install dependencies:
-
-```powershell
-pip install -r backend/requirements.txt
-```
-
-Create:
-
-```text
-backend/.env
-```
-
-based on:
-
-```text
-backend/.env.example
-```
-
-Configure:
-
-```env
-NEO4J_URI=your_neo4j_uri
-NEO4J_USERNAME=your_username
-NEO4J_PASSWORD=your_password
-
-GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-2.5-flash
-```
-
-**Never commit `backend/.env` to Git.**
-
----
-
-## Start Backend
-
-From the repository root:
-
-```powershell
-python -m uvicorn app.main:app --reload --app-dir backend
-```
-
-Backend:
-
-```text
-http://127.0.0.1:8000
-```
-
-Health check:
-
-```text
-http://127.0.0.1:8000/health
-```
-
----
-
-# 15. Neo4j Setup
-
-Run the schema from:
-
-```text
-cypher/schema.cypher
-```
-
-Then load the deterministic demonstration dataset from:
-
-```text
-cypher/seed.cypher
-```
-
-The schema uses idempotent constraints, allowing the setup to be safely re-run.
-
----
-
-# 16. Frontend Setup
-
-Open another terminal:
-
-```powershell
-cd C:\Users\hp\traceveritas\frontend
-```
-
-Install dependencies:
-
-```powershell
-npm install
-```
-
-Start development server:
-
-```powershell
-npm run dev
-```
-
-The frontend will normally be available at:
-
-```text
-http://localhost:5173
-```
-
----
-
-# 17. Recommended Demo Flow
-
-The intended demonstration sequence is:
+The intended demonstration follows a complete incident-response cycle:
 
 ### 1. Investigate
+
+Select:
 
 ```text
 B002
 ```
 
-Show the live supply-chain graph.
+View its live supply-chain graph.
 
----
+### 2. Analyze
 
-### 2. Explain the blast radius
-
-Show:
+Show the downstream blast radius:
 
 ```text
 2 Kitchens
@@ -743,17 +365,13 @@ Show:
 7 Customers
 ```
 
----
-
 ### 3. Ask Trace Assist
 
 Ask:
 
-> Who is affected?
+> **Who is affected?**
 
-Demonstrate that the answer is grounded in the live investigation.
-
----
+Demonstrate that the answer is grounded in the current graph context.
 
 ### 4. Reverse Trace
 
@@ -763,50 +381,33 @@ Investigate:
 O07
 ```
 
-Show:
+Trace:
 
 ```text
 O07 → D05 → K02 → B002 → S001
 ```
 
-Explain that the graph can trace both downstream impact and upstream origin.
+### 5. Simulate
 
----
-
-### 5. Simulate Containment
-
-Select:
+Simulate containment at:
 
 ```text
-B002
-K01
+B002 + K01
 ```
 
-Compare:
+Compare live impact with simulated remaining impact.
 
-```text
-LIVE IMPACT
-vs.
-SIMULATED REMAINING
-```
+### 6. Recall
 
-Explain that simulation does not mutate the database.
-
----
-
-### 6. Execute Recall
-
-Apply recall to:
+Execute the recall for:
 
 ```text
 B002
 ```
-
----
 
 ### 7. Verify
 
-Show:
+Confirm:
 
 ```text
 ✓ RECALL VERIFIED
@@ -814,163 +415,7 @@ CONTAMINATED
 VERIFIED FROM LIVE NEO4J GRAPH
 ```
 
-This completes:
-
-> **Investigate → Trace → Analyze → Simulate → Decide → Recall → Verify**
-
----
-
-# 18. Security Notes
-
-Sensitive credentials must remain server-side.
-
-Never commit:
-
-```text
-backend/.env
-```
-
-Gemini API keys must never be exposed in the React frontend.
-
-Neo4j credentials must never be hardcoded into frontend source files.
-
-The repository should contain only:
-
-```text
-backend/.env.example
-```
-
-with placeholder values.
-
----
-
-# 19. Design Philosophy
-
-TraceVeritas uses a restrained enterprise visual language.
-
-Primary design principles:
-
-* information hierarchy over decoration
-* graph-first investigation
-* warm neutral canvas
-* restrained maroon identity
-* semantic colors
-* high information density
-* clear operational states
-* minimal unnecessary UI
-* accessibility-conscious interaction
-* no fake AI affordances
-
-The system is designed to feel like a real food-safety operations console rather than a generic AI dashboard.
-
----
-
-# 20. Why Neo4j?
-
-The central value of TraceVeritas comes from connected traversal.
-
-A contaminated batch is not merely a database row.
-
-It is connected to:
-
-```text
-Supplier
-   ↓
-Batch
-   ↓
-Kitchen
-   ↓
-Dish
-   ↓
-Order
-   ↓
-Customer
-```
-
-Neo4j allows TraceVeritas to traverse those relationships naturally and answer both:
-
-```text
-"What does this contamination affect?"
-```
-
-and:
-
-```text
-"Where did this affected order originate?"
-```
-
-The graph therefore becomes the operational model of the incident rather than simply another visualization.
-
----
-
-# 21. Project Differentiation
-
-TraceVeritas goes beyond static contamination lookup.
-
-Its workflow combines:
-
-```text
-LIVE GRAPH INVESTIGATION
-        +
-BLAST-RADIUS ANALYSIS
-        +
-REVERSE ROOT-CAUSE TRACE
-        +
-COUNTERFACTUAL SIMULATION
-        +
-TARGETED RECALL
-        +
-LIVE VERIFICATION
-        +
-GRAPH-GROUNDED GEMINI ASSISTANCE
-```
-
-This creates a complete incident-response loop rather than a passive graph viewer.
-
----
-
-# 22. Validation
-
-The system has been validated across the core workflow:
-
-* Live Neo4j investigation
-* Dynamic batch impact
-* Reverse tracing
-* Counterfactual containment
-* Recall mutation
-* Fresh recall verification
-* Gemini-grounded Trace Assist
-* Read Aloud
-* Voice Input where supported
-* Frontend production build
-
-Frontend build:
-
-```text
-npm run build
-```
-
-passes successfully.
-
----
-
-# 23. Repository
-
-GitHub:
-
-https://github.com/urstrulysiddhu/traceveritas
-
-Current development branch:
-
-```text
-main
-```
-
----
-
-# 24. Status
-
-**TraceVeritas is a functional graph-powered food safety intelligence prototype demonstrating an end-to-end incident response workflow from investigation through verified recall.**
+This completes the full:
 
 ```text
 INVESTIGATE
@@ -981,8 +426,6 @@ ANALYZE
      ↓
 SIMULATE
      ↓
-DECIDE
-     ↓
 RECALL
      ↓
 VERIFY
@@ -990,6 +433,59 @@ VERIFY
 
 ---
 
-## Built for the Neo4j Logistics & Supply Chain Transparency Challenge
+# Validation
 
-**TraceVeritas — Turn supply-chain uncertainty into traceable action.**
+The core workflow has been validated across:
+
+* Live Neo4j investigation
+* Dynamic impact calculation
+* Reverse tracing
+* Counterfactual containment
+* Recall mutation
+* Fresh recall verification
+* Gemini-grounded Trace Assist
+* Voice input where supported
+* Read Aloud
+* Frontend production build
+
+The frontend production build passes with:
+
+```bash
+npm run build
+```
+
+---
+
+# Project Context
+
+**TraceVeritas was built for the Neo4j Logistics & Supply Chain Transparency Challenge.**
+
+The project explores how graph databases can be used not only for supply-chain visibility, but for **operational decision-making during an incident**.
+
+The focus is deliberately beyond a static graph viewer:
+
+```text
+LIVE INVESTIGATION
+        +
+BLAST-RADIUS ANALYSIS
+        +
+REVERSE TRACE
+        +
+COUNTERFACTUAL SIMULATION
+        +
+TARGETED RECALL
+        +
+LIVE VERIFICATION
+        +
+GRAPH-GROUNDED AI
+```
+
+The result is a functional prototype that connects graph traversal, operational workflows, and grounded AI assistance in one interface.
+
+---
+
+## Status
+
+**Functional graph-powered food-safety intelligence prototype.**
+
+> **TraceVeritas — Turn supply-chain uncertainty into traceable action.**
